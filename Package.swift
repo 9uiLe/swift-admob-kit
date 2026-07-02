@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         // name: はローカル依存の識別子がディレクトリ名 (num-path) から導出され
         // Package.swift の宣言名 AdPuzzleApp と一致しないため必須 (deprecated だが意図的)。
-        .package(name: "AdPuzzleApp", path: ".."),
+        .package(name: "AdPuzzleApp", path: "../AdPuzzleApp"),
         .package(
             url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
             from: "13.6.0"
