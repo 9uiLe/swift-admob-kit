@@ -21,6 +21,7 @@ let package = Package(
             url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
             from: "13.6.0",
         ),
+        .package(url: "https://github.com/9uiLe/swift-tasking.git", from: "0.1.0"),
     ],
     targets: [
         .target(
@@ -30,6 +31,7 @@ let package = Package(
                 .product(name: "Application", package: "AdPuzzleApp"),
                 .product(name: "Presentation", package: "AdPuzzleApp"),
                 .product(name: "GoogleMobileAds", package: "swift-package-manager-google-mobile-ads"),
+                .product(name: "Tasking", package: "swift-tasking"),
             ],
         ),
     ],
