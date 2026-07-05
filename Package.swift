@@ -5,13 +5,13 @@ import PackageDescription
 let package = Package(
     name: "AdsKit",
     platforms: [
-        .iOS(.v26)
+        .iOS(.v26),
     ],
     products: [
         .library(
             name: "AdsKit",
-            targets: ["AdsKit"]
-        )
+            targets: ["AdsKit"],
+        ),
     ],
     dependencies: [
         // name: はローカル依存の識別子がディレクトリ名 (num-path) から導出され
@@ -19,8 +19,8 @@ let package = Package(
         .package(name: "AdPuzzleApp", path: "../AdPuzzleApp"),
         .package(
             url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
-            from: "13.6.0"
-        )
+            from: "13.6.0",
+        ),
     ],
     targets: [
         .target(
@@ -29,9 +29,9 @@ let package = Package(
                 .product(name: "Domain", package: "AdPuzzleApp"),
                 .product(name: "Application", package: "AdPuzzleApp"),
                 .product(name: "Presentation", package: "AdPuzzleApp"),
-                .product(name: "GoogleMobileAds", package: "swift-package-manager-google-mobile-ads")
-            ]
-        )
+                .product(name: "GoogleMobileAds", package: "swift-package-manager-google-mobile-ads"),
+            ],
+        ),
     ],
-    swiftLanguageModes: [.v6]
+    swiftLanguageModes: [.v6],
 )

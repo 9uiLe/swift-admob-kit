@@ -1,12 +1,13 @@
-// concurrency-exception: SDK の Sendable 未準拠に対する @preconcurrency import (AdsKit 内部限定)。
-@preconcurrency import GoogleMobileAds
 import Application
 import Domain
+
+// concurrency-exception: SDK の Sendable 未準拠に対する @preconcurrency import (AdsKit 内部限定)。
+@preconcurrency import GoogleMobileAds
 import UIKit
 
-// AdServingRepository ポートの Google Mobile Ads 実装。
-// SDK の UI 要件 (present / UMP / ATT はメインスレッド必須) に合わせ @MainActor に分離する。
-// nonisolated な async ポート要件は MainActor 分離メソッドで witness できる (await にホップが吸収される)。
+/// AdServingRepository ポートの Google Mobile Ads 実装。
+/// SDK の UI 要件 (present / UMP / ATT はメインスレッド必須) に合わせ @MainActor に分離する。
+/// nonisolated な async ポート要件は MainActor 分離メソッドで witness できる (await にホップが吸収される)。
 @MainActor
 public final class AdMobServingRepository: AdServingRepository {
     private let consent = ConsentCoordinator()
@@ -25,7 +26,7 @@ public final class AdMobServingRepository: AdServingRepository {
         await consent.presentPrivacyOptions()
     }
 
-    public func prepareAds(configuration: AdMonetizationConfiguration) async throws {
+    public func prepareAds(configuration _: AdMonetizationConfiguration) async throws {
         guard !isStarted else {
             return
         }
@@ -38,7 +39,7 @@ public final class AdMobServingRepository: AdServingRepository {
         isStarted = true
     }
 
-    // 同意未取得・未初期化の状態で呼ばれても安全に劣化する (ポート契約: 設計書 §3.5)。
+    /// 同意未取得・未初期化の状態で呼ばれても安全に劣化する (ポート契約: 設計書 §3.5)。
     public func loadAd(placement: AdPlacementDefinition) async throws {
         guard isStarted, consent.canRequestAds, let resolver else {
             return
@@ -47,12 +48,12 @@ public final class AdMobServingRepository: AdServingRepository {
         case .interstitial:
             interstitial = try? await InterstitialAd.load(
                 with: resolver.adUnitID(for: placement.id),
-                request: Request()
+                request: Request(),
             )
         case .rewarded, .rewardedInterstitial:
             rewardedAds[placement.id] = try? await RewardedAd.load(
                 with: resolver.adUnitID(for: placement.id),
-                request: Request()
+                request: Request(),
             )
         case .banner:
             break
@@ -61,7 +62,8 @@ public final class AdMobServingRepository: AdServingRepository {
 
     public func showAd(placement: AdPlacementDefinition) async throws -> AdShowOutcome {
         guard isStarted, consent.canRequestAds,
-              let viewController = ConsentCoordinator.topViewController() else {
+              let viewController = ConsentCoordinator.topViewController()
+        else {
             return .unavailable
         }
         switch placement.format {
@@ -76,7 +78,7 @@ public final class AdMobServingRepository: AdServingRepository {
 
     private func showInterstitial(
         from viewController: UIViewController,
-        placement: AdPlacementDefinition
+        placement: AdPlacementDefinition,
     ) async -> AdShowOutcome {
         guard let ad = interstitial else {
             reload(placement)
@@ -94,7 +96,7 @@ public final class AdMobServingRepository: AdServingRepository {
 
     private func showRewarded(
         from viewController: UIViewController,
-        placement: AdPlacementDefinition
+        placement: AdPlacementDefinition,
     ) async -> AdShowOutcome {
         guard let ad = rewardedAds[placement.id] else {
             reload(placement)
@@ -107,7 +109,7 @@ public final class AdMobServingRepository: AdServingRepository {
             ad.present(from: viewController) {
                 events.recordReward(Application.AdReward(
                     placementID: placement.id,
-                    amount: ad.adReward.amount.intValue
+                    amount: ad.adReward.amount.intValue,
                 ))
             }
         }
@@ -128,8 +130,8 @@ public final class AdMobServingRepository: AdServingRepository {
     }
 }
 
-// フルスクリーン広告のデリゲートイベントを async/await に橋渡しする。
-// 意味論 (設計書 §3.5): インプレッション記録後の dismiss = .completed / 表示前の失敗 = .unavailable。
+/// フルスクリーン広告のデリゲートイベントを async/await に橋渡しする。
+/// 意味論 (設計書 §3.5): インプレッション記録後の dismiss = .completed / 表示前の失敗 = .unavailable。
 @MainActor
 private final class FullScreenAdEvents: NSObject, FullScreenContentDelegate {
     private(set) var earnedReward: Application.AdReward?
@@ -147,21 +149,21 @@ private final class FullScreenAdEvents: NSObject, FullScreenContentDelegate {
         earnedReward = reward
     }
 
-    nonisolated func adDidRecordImpression(_ ad: FullScreenPresentingAd) {
+    nonisolated func adDidRecordImpression(_: FullScreenPresentingAd) {
         Task { @MainActor in
             self.impressionRecorded = true
         }
     }
 
-    nonisolated func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
+    nonisolated func adDidDismissFullScreenContent(_: FullScreenPresentingAd) {
         Task { @MainActor in
             self.finish(with: self.impressionRecorded ? .completed : .dismissed)
         }
     }
 
     nonisolated func ad(
-        _ ad: FullScreenPresentingAd,
-        didFailToPresentFullScreenContentWithError error: Error
+        _: FullScreenPresentingAd,
+        didFailToPresentFullScreenContentWithError _: Error,
     ) {
         Task { @MainActor in
             self.finish(with: .unavailable)

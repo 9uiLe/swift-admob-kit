@@ -1,30 +1,31 @@
 import Domain
 import StoreKit
 
-enum AdsEnvironment: Sendable {
+enum AdsEnvironment {
     case test
     case production
 }
 
-struct AdUnitIDResolver: Sendable {
+struct AdUnitIDResolver {
     let environment: AdsEnvironment
 
     static func resolve() async -> AdUnitIDResolver {
-        AdUnitIDResolver(environment: await resolveEnvironment())
+        await AdUnitIDResolver(environment: resolveEnvironment())
     }
 
     private static func resolveEnvironment() async -> AdsEnvironment {
         #if DEBUG || targetEnvironment(simulator)
-        return .test
-        #else
-        // TestFlight と App Store 提出は同一の Release アーカイブを共有するため、
-        // ビルド設定ではなく実行時に判定する。判定不能時は test に倒す
-        // (fail-safe: 収益を捨てても無効トラフィックを出さない)。
-        guard case let .verified(transaction) = try? await AppTransaction.shared,
-              transaction.environment == .production else {
             return .test
-        }
-        return .production
+        #else
+            // TestFlight と App Store 提出は同一の Release アーカイブを共有するため、
+            // ビルド設定ではなく実行時に判定する。判定不能時は test に倒す
+            // (fail-safe: 収益を捨てても無効トラフィックを出さない)。
+            guard case let .verified(transaction) = try? await AppTransaction.shared,
+                  transaction.environment == .production
+            else {
+                return .test
+            }
+            return .production
         #endif
     }
 
@@ -37,7 +38,7 @@ struct AdUnitIDResolver: Sendable {
         }
     }
 
-    // Google 公式のデモ用 AdUnitID (https://developers.google.com/admob/ios/test-ads)
+    /// Google 公式のデモ用 AdUnitID (https://developers.google.com/admob/ios/test-ads)
     private func testAdUnitID(for placement: AdPlacementID) -> String {
         switch placement {
         case .gameplayBanner:
@@ -49,7 +50,7 @@ struct AdUnitIDResolver: Sendable {
         }
     }
 
-    // 本番 AdUnitID はこのメソッド以外に書かない (scripts/check-architecture.sh が検査)。
+    /// 本番 AdUnitID はこのメソッド以外に書かない (scripts/check-architecture.sh が検査)。
     private func productionAdUnitID(for placement: AdPlacementID) -> String {
         switch placement {
         case .gameplayBanner:

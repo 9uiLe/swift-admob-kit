@@ -1,13 +1,14 @@
-// concurrency-exception: SDK の Sendable 未準拠に対する @preconcurrency import (AdsKit 内部限定)。
-@preconcurrency import GoogleMobileAds
 import DesignSystem
 import Domain
+
+// concurrency-exception: SDK の Sendable 未準拠に対する @preconcurrency import (AdsKit 内部限定)。
+@preconcurrency import GoogleMobileAds
 import SwiftUI
 import UIKit
 
-// バナースロット (Presentation) に注入される実バナー。
-// ロード前はプレースホルダを表示し、ロード完了時にフレーム内でクロスフェードする
-// (スロット側が高さを予約しているためレイアウトは一切動かない)。
+/// バナースロット (Presentation) に注入される実バナー。
+/// ロード前はプレースホルダを表示し、ロード完了時にフレーム内でクロスフェードする
+/// (スロット側が高さを予約しているためレイアウトは一切動かない)。
 struct GameplayBannerContainer: View {
     let placement: AdPlacementID
     @State private var adUnitID: String?
@@ -26,7 +27,7 @@ struct GameplayBannerContainer: View {
                     AdMobBannerView(
                         adUnitID: adUnitID,
                         width: proxy.size.width,
-                        isLoaded: $isLoaded
+                        isLoaded: $isLoaded,
                     )
                 }
                 .opacity(isLoaded ? 1 : 0)
@@ -57,13 +58,13 @@ private struct AdMobBannerView: UIViewRepresentable {
         container.addSubview(banner)
         NSLayoutConstraint.activate([
             banner.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            banner.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+            banner.centerYAnchor.constraint(equalTo: container.centerYAnchor),
         ])
         context.coordinator.banner = banner
         return container
     }
 
-    func updateUIView(_ container: UIView, context: Context) {
+    func updateUIView(_: UIView, context: Context) {
         context.coordinator.loadIfNeeded(width: width)
     }
 
@@ -86,19 +87,19 @@ private struct AdMobBannerView: UIViewRepresentable {
             // maxHeight 付きのインラインアダプティブサイズを使う (レイアウトシフト防止)。
             banner.adSize = inlineAdaptiveBanner(
                 width: width,
-                maxHeight: DesignAdMetrics.bannerReservedHeight
+                maxHeight: DesignAdMetrics.bannerReservedHeight,
             )
             banner.rootViewController = ConsentCoordinator.topViewController()
             banner.load(Request())
         }
 
-        nonisolated func bannerViewDidReceiveAd(_ bannerView: BannerView) {
+        nonisolated func bannerViewDidReceiveAd(_: BannerView) {
             Task { @MainActor in
                 self.isLoaded.wrappedValue = true
             }
         }
 
-        nonisolated func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Error) {
+        nonisolated func bannerView(_: BannerView, didFailToReceiveAdWithError _: Error) {
             Task { @MainActor in
                 // 失敗時はプレースホルダのまま (ゲーム進行を止めない)。
                 self.isLoaded.wrappedValue = false

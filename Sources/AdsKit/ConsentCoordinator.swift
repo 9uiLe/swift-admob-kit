@@ -1,12 +1,13 @@
+import AppTrackingTransparency
+
 // concurrency-exception: Google Mobile Ads SDK は Swift 6 strict concurrency に完全対応していないため、
 // @preconcurrency import を AdsKit 内部に限定して使用する (設計書 §2 T2)。
 @preconcurrency import GoogleMobileAds
-@preconcurrency import UserMessagingPlatform
-import AppTrackingTransparency
 import UIKit
+@preconcurrency import UserMessagingPlatform
 
-// UMP 同意 → ATT → canRequestAds の状態機械 (設計書 §3.5)。
-// AdMob コンソールの「IDFA メッセージ」は使わず、ATT はコードから明示的に呼ぶ手動パターン。
+/// UMP 同意 → ATT → canRequestAds の状態機械 (設計書 §3.5)。
+/// AdMob コンソールの「IDFA メッセージ」は使わず、ATT はコードから明示的に呼ぶ手動パターン。
 @MainActor
 final class ConsentCoordinator {
     private(set) var canRequestAds = false
