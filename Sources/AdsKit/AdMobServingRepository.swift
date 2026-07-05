@@ -15,11 +15,45 @@ public final class AdMobServingRepository: AdServingRepository {
     private var interstitial: InterstitialAd?
     private var rewardedAds: [AdPlacementID: RewardedAd] = [:]
     private var isStarted = false
+    private var prepareAttemptCompleted = false
+    private var readinessWaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
 
     public init() {}
 
+    public var isReady: Bool {
+        isStarted
+    }
+
     public var privacyOptionsRequired: Bool {
         consent.privacyOptionsRequired
+    }
+
+    public func waitUntilReady() async {
+        guard !isStarted, !prepareAttemptCompleted else {
+            return
+        }
+        let waiterID = UUID()
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                if isStarted || prepareAttemptCompleted {
+                    continuation.resume()
+                    return
+                }
+                if Task.isCancelled {
+                    continuation.resume()
+                    return
+                }
+                readinessWaiters[waiterID] = continuation
+            }
+        } onCancel: {
+            Task { @MainActor in
+                self.resumeReadinessWaiter(id: waiterID)
+            }
+        }
+    }
+
+    public func bannerAdUnitID(for placement: AdPlacementID) -> String? {
+        resolver?.adUnitID(for: placement)
     }
 
     public func presentPrivacyOptions() async {
@@ -33,10 +67,14 @@ public final class AdMobServingRepository: AdServingRepository {
         resolver = await AdUnitIDResolver.resolve()
         await consent.prepareConsent()
         guard consent.canRequestAds else {
+            prepareAttemptCompleted = true
+            resumeReadinessWaiters()
             return
         }
         _ = await MobileAds.shared.start()
         isStarted = true
+        prepareAttemptCompleted = true
+        resumeReadinessWaiters()
     }
 
     /// 同意未取得・未初期化の状態で呼ばれても安全に劣化する (ポート契約: 設計書 §3.5)。
@@ -126,6 +164,18 @@ public final class AdMobServingRepository: AdServingRepository {
         // 広告インスタンスは 1 回のみ表示可能・約 1 時間で失効するため、表示後に 1 枚だけ再ロードする。
         Task {
             try? await self.loadAd(placement: placement)
+        }
+    }
+
+    private func resumeReadinessWaiter(id: UUID) {
+        readinessWaiters.removeValue(forKey: id)?.resume()
+    }
+
+    private func resumeReadinessWaiters() {
+        let waiters = Array(readinessWaiters.values)
+        readinessWaiters.removeAll()
+        for waiter in waiters {
+            waiter.resume()
         }
     }
 }

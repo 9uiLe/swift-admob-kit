@@ -11,8 +11,10 @@ import UIKit
 /// (スロット側が高さを予約しているためレイアウトは一切動かない)。
 struct GameplayBannerContainer: View {
     let placement: AdPlacementID
+    let repository: AdMobServingRepository
     @State private var adUnitID: String?
     @State private var isLoaded = false
+    @State private var loadedAdSize: CGSize?
 
     var body: some View {
         ZStack {
@@ -28,14 +30,24 @@ struct GameplayBannerContainer: View {
                         adUnitID: adUnitID,
                         width: proxy.size.width,
                         isLoaded: $isLoaded,
+                        loadedAdSize: $loadedAdSize,
                     )
+                    .frame(
+                        width: loadedAdSize?.width ?? proxy.size.width,
+                        height: loadedAdSize?.height ?? proxy.size.height,
+                    )
+                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
                 }
                 .opacity(isLoaded ? 1 : 0)
             }
         }
         .animation(DesignAnimation.adFade, value: isLoaded)
         .task {
-            adUnitID = await AdUnitIDResolver.resolve().adUnitID(for: placement)
+            await repository.waitUntilReady()
+            guard repository.isReady else {
+                return
+            }
+            adUnitID = repository.bannerAdUnitID(for: placement)
         }
     }
 }
@@ -44,9 +56,10 @@ private struct AdMobBannerView: UIViewRepresentable {
     let adUnitID: String
     let width: CGFloat
     @Binding var isLoaded: Bool
+    @Binding var loadedAdSize: CGSize?
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(isLoaded: $isLoaded)
+        Coordinator(isLoaded: $isLoaded, loadedAdSize: $loadedAdSize)
     }
 
     func makeUIView(context: Context) -> UIView {
@@ -78,10 +91,12 @@ private struct AdMobBannerView: UIViewRepresentable {
     final class Coordinator: NSObject, BannerViewDelegate {
         var banner: BannerView?
         private var isLoaded: Binding<Bool>
+        private var loadedAdSize: Binding<CGSize?>
         private var loadedWidth: CGFloat = 0
 
-        init(isLoaded: Binding<Bool>) {
+        init(isLoaded: Binding<Bool>, loadedAdSize: Binding<CGSize?>) {
             self.isLoaded = isLoaded
+            self.loadedAdSize = loadedAdSize
         }
 
         func loadIfNeeded(width: CGFloat) {
@@ -89,6 +104,8 @@ private struct AdMobBannerView: UIViewRepresentable {
                 return
             }
             loadedWidth = width
+            isLoaded.wrappedValue = false
+            loadedAdSize.wrappedValue = nil
             // 予約高さ (DesignAdMetrics.bannerReservedHeight) を超えないよう
             // maxHeight 付きのインラインアダプティブサイズを使う (レイアウトシフト防止)。
             banner.adSize = inlineAdaptiveBanner(
@@ -101,6 +118,7 @@ private struct AdMobBannerView: UIViewRepresentable {
 
         nonisolated func bannerViewDidReceiveAd(_: BannerView) {
             Task { @MainActor in
+                self.loadedAdSize.wrappedValue = self.banner?.adSize.size
                 self.isLoaded.wrappedValue = true
             }
         }
@@ -108,6 +126,7 @@ private struct AdMobBannerView: UIViewRepresentable {
         nonisolated func bannerView(_: BannerView, didFailToReceiveAdWithError _: Error) {
             Task { @MainActor in
                 // 失敗時はプレースホルダのまま (ゲーム進行を止めない)。
+                self.loadedAdSize.wrappedValue = nil
                 self.isLoaded.wrappedValue = false
             }
         }
