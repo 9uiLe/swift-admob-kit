@@ -104,8 +104,12 @@ private struct AdMobBannerView: UIViewRepresentable {
                 return
             }
             loadedWidth = width
-            isLoaded.wrappedValue = false
-            loadedAdSize.wrappedValue = nil
+            // updateUIView (view update 中) からの @State 書き換えは未定義動作になるため、
+            // binding への書き込みは次のメインアクタターンに遅延させる。
+            Task { @MainActor in
+                self.isLoaded.wrappedValue = false
+                self.loadedAdSize.wrappedValue = nil
+            }
             // 予約高さ (DesignAdMetrics.bannerReservedHeight) を超えないよう
             // maxHeight 付きのインラインアダプティブサイズを使う (レイアウトシフト防止)。
             banner.adSize = inlineAdaptiveBanner(
