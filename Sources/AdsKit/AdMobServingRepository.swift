@@ -71,6 +71,8 @@ public final class AdMobServingRepository: AdServingRepository {
             resumeReadinessWaiters()
             return
         }
+        // メディエーションアダプタを使用していないため、start() 時のアダプタ初期化を無効化する。
+        MobileAds.shared.disableMediationInitialization()
         _ = await MobileAds.shared.start()
         isStarted = true
         prepareAttemptCompleted = true
