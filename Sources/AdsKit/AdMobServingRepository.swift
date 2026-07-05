@@ -80,15 +80,15 @@ public final class AdMobServingRepository: AdServingRepository {
         from viewController: UIViewController,
         placement: AdPlacementDefinition,
     ) async -> AdShowOutcome {
-        guard let ad = interstitial else {
+        guard let loadedInterstitial = interstitial else {
             reload(placement)
             return .unavailable
         }
         interstitial = nil
         let events = FullScreenAdEvents()
-        ad.fullScreenContentDelegate = events
+        loadedInterstitial.fullScreenContentDelegate = events
         let outcome = await events.run {
-            ad.present(from: viewController)
+            loadedInterstitial.present(from: viewController)
         }
         reload(placement)
         return outcome
@@ -98,18 +98,18 @@ public final class AdMobServingRepository: AdServingRepository {
         from viewController: UIViewController,
         placement: AdPlacementDefinition,
     ) async -> AdShowOutcome {
-        guard let ad = rewardedAds[placement.id] else {
+        guard let loadedRewarded = rewardedAds[placement.id] else {
             reload(placement)
             return .unavailable
         }
         rewardedAds[placement.id] = nil
         let events = FullScreenAdEvents()
-        ad.fullScreenContentDelegate = events
+        loadedRewarded.fullScreenContentDelegate = events
         let outcome = await events.run {
-            ad.present(from: viewController) {
+            loadedRewarded.present(from: viewController) {
                 events.recordReward(Application.AdReward(
                     placementID: placement.id,
-                    amount: ad.adReward.amount.intValue,
+                    amount: loadedRewarded.adReward.amount.intValue,
                 ))
             }
         }
@@ -161,6 +161,7 @@ private final class FullScreenAdEvents: NSObject, FullScreenContentDelegate {
         }
     }
 
+    /// GADFullScreenContentDelegate のメソッド名 (SDK 契約)
     nonisolated func ad(
         _: FullScreenPresentingAd,
         didFailToPresentFullScreenContentWithError _: Error,
