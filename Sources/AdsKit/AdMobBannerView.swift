@@ -4,6 +4,7 @@ import Domain
 // concurrency-exception: SDK の Sendable 未準拠に対する @preconcurrency import (AdsKit 内部限定)。
 @preconcurrency import GoogleMobileAds
 import SwiftUI
+import Tasking
 import UIKit
 
 /// バナースロット (Presentation) に注入される実バナー。
@@ -89,10 +90,12 @@ private struct AdMobBannerView: UIViewRepresentable {
 
     @MainActor
     final class Coordinator: NSObject, BannerViewDelegate {
+        private static let resetLoadStateAction: ActionID = "adsKit.banner.resetLoadState"
         var banner: BannerView?
         private var isLoaded: Binding<Bool>
         private var loadedAdSize: Binding<CGSize?>
         private var loadedWidth: CGFloat = 0
+        private let taskStore = ViewTaskStore()
 
         init(isLoaded: Binding<Bool>, loadedAdSize: Binding<CGSize?>) {
             self.isLoaded = isLoaded
@@ -106,7 +109,7 @@ private struct AdMobBannerView: UIViewRepresentable {
             loadedWidth = width
             // updateUIView (view update 中) からの @State 書き換えは未定義動作になるため、
             // binding への書き込みは次のメインアクタターンに遅延させる。
-            Task { @MainActor in
+            taskStore.start(id: Self.resetLoadStateAction, lifetime: .screenBound, policy: .cancelExisting) { _ in
                 self.isLoaded.wrappedValue = false
                 self.loadedAdSize.wrappedValue = nil
             }

@@ -3,7 +3,15 @@ import Domain
 
 // concurrency-exception: SDK の Sendable 未準拠に対する @preconcurrency import (AdsKit 内部限定)。
 @preconcurrency import GoogleMobileAds
+import Tasking
 import UIKit
+
+/// AdsKit 内部で起動する非同期 Action の ID (Presentation の PuzzleActions と同じ規約)。
+private enum AdsKitActions {
+    static func reloadAd(_ placement: AdPlacementID) -> ActionID {
+        ActionID("adsKit.reloadAd.\(placement.rawValue)")
+    }
+}
 
 /// AdServingRepository ポートの Google Mobile Ads 実装。
 /// SDK の UI 要件 (present / UMP / ATT はメインスレッド必須) に合わせ @MainActor に分離する。
@@ -17,6 +25,7 @@ public final class AdMobServingRepository: AdServingRepository {
     private var isStarted = false
     private var prepareAttemptCompleted = false
     private var readinessWaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
+    private let taskStore = ViewTaskStore()
 
     public init() {}
 
@@ -46,6 +55,7 @@ public final class AdMobServingRepository: AdServingRepository {
                 readinessWaiters[waiterID] = continuation
             }
         } onCancel: {
+            // nonisolated 同期コールバックからの MainActor ホップは ViewTaskStore (@MainActor) に到達できないため生 Task を維持する。
             Task { @MainActor in
                 self.resumeReadinessWaiter(id: waiterID)
             }
@@ -164,7 +174,8 @@ public final class AdMobServingRepository: AdServingRepository {
 
     private func reload(_ placement: AdPlacementDefinition) {
         // 広告インスタンスは 1 回のみ表示可能・約 1 時間で失効するため、表示後に 1 枚だけ再ロードする。
-        Task {
+        // ViewTaskStore の ignoreNew で同一プレースメントの再ロード多重起動を構造的に防ぐ。
+        taskStore.start(id: AdsKitActions.reloadAd(placement.id), lifetime: .appBound, policy: .ignoreNew) { _ in
             try? await self.loadAd(placement: placement)
         }
     }
@@ -202,6 +213,7 @@ private final class FullScreenAdEvents: NSObject, FullScreenContentDelegate {
     }
 
     nonisolated func adDidRecordImpression(_: FullScreenPresentingAd) {
+        // nonisolated 同期コールバックからの MainActor ホップは ViewTaskStore (@MainActor) に到達できないため生 Task を維持する。
         Task { @MainActor in
             self.impressionRecorded = true
         }
