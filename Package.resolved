@@ -1,5 +1,5 @@
 {
-  "originHash" : "9ac96bd82e368957f6e6db4054a2ed43965febc2053c53b7d3ea64dc2bea3984",
+  "originHash" : "e26815bb51fd78af3750693ad2c23251a831699b30ff83faed49ffc50091c8df",
   "pins" : [
     {
       "identity" : "swift-package-manager-google-mobile-ads",
@@ -17,6 +17,24 @@
       "state" : {
         "revision" : "13b248eaa73b7826f0efb1bcf455e251d65ecb1b",
         "version" : "3.1.0"
+      }
+    },
+    {
+      "identity" : "swift-scoped-animation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/9uiLe/swift-scoped-animation.git",
+      "state" : {
+        "revision" : "1e0e79023b173209453e9759381c9aff4932dff4",
+        "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "swift-tasking",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/9uiLe/swift-tasking.git",
+      "state" : {
+        "revision" : "dee04e56cb55f261730e616c67d28fee11b1d882",
+        "version" : "0.1.0"
       }
     }
   ],

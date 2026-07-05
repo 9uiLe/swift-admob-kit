@@ -51,6 +51,10 @@ private struct AdMobBannerView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> UIView {
         let container = UIView()
+        // 予約高さ (DesignAdMetrics.bannerReservedHeight) の外に実バナーがはみ出さないよう、
+        // Auto Layout で container の実寸に強制一致させたうえで念のためクリップする
+        // (adSize は上限指定にすぎず、実際に配信される広告の実寸を保証しないため)。
+        container.clipsToBounds = true
         let banner = BannerView()
         banner.adUnitID = adUnitID
         banner.delegate = context.coordinator
@@ -59,6 +63,8 @@ private struct AdMobBannerView: UIViewRepresentable {
         NSLayoutConstraint.activate([
             banner.centerXAnchor.constraint(equalTo: container.centerXAnchor),
             banner.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            banner.widthAnchor.constraint(equalTo: container.widthAnchor),
+            banner.heightAnchor.constraint(equalTo: container.heightAnchor),
         ])
         context.coordinator.banner = banner
         return container
