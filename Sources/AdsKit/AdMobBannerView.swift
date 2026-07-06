@@ -42,7 +42,7 @@ struct GameplayBannerContainer: View {
                 .opacity(isLoaded ? 1 : 0)
             }
         }
-        .animation(DesignAnimation.adFade, value: isLoaded)
+        .animation(DesignAnimation.adFade, value: isLoaded) // animation-exception: AdsKit 隔離層は ScopedAnimation に依存不可のため直接指定
         .task {
             await repository.waitUntilReady()
             guard repository.isReady else {
@@ -136,9 +136,12 @@ private struct AdMobBannerView: UIViewRepresentable {
             }
         }
 
-        nonisolated func bannerView(_: BannerView, didFailToReceiveAdWithError _: Error) {
+        nonisolated func bannerView(_: BannerView, didFailToReceiveAdWithError error: Error) {
             Task { @MainActor in
                 // 失敗時はプレースホルダのまま (ゲーム進行を止めない)。
+                AdsKitLog.logger.error(
+                    "failed to load banner ad: \(String(describing: error), privacy: .public)",
+                )
                 self.loadedAdSize.wrappedValue = nil
                 self.isLoaded.wrappedValue = false
             }

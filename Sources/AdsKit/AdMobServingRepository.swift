@@ -96,15 +96,27 @@ public final class AdMobServingRepository: AdServingRepository {
         }
         switch placement.format {
         case .interstitial:
-            interstitial = try? await InterstitialAd.load(
-                with: resolver.adUnitID(for: placement.id),
-                request: Request(),
-            )
+            do {
+                interstitial = try await InterstitialAd.load(
+                    with: resolver.adUnitID(for: placement.id),
+                    request: Request(),
+                )
+            } catch {
+                interstitial = nil
+                let message = "failed to load interstitial ad for \(placement.id.rawValue): \(error)"
+                AdsKitLog.logger.error("\(message, privacy: .public)")
+            }
         case .rewarded, .rewardedInterstitial:
-            rewardedAds[placement.id] = try? await RewardedAd.load(
-                with: resolver.adUnitID(for: placement.id),
-                request: Request(),
-            )
+            do {
+                rewardedAds[placement.id] = try await RewardedAd.load(
+                    with: resolver.adUnitID(for: placement.id),
+                    request: Request(),
+                )
+            } catch {
+                rewardedAds[placement.id] = nil
+                let message = "failed to load rewarded ad for \(placement.id.rawValue): \(error)"
+                AdsKitLog.logger.error("\(message, privacy: .public)")
+            }
         case .banner:
             break
         }
@@ -176,7 +188,12 @@ public final class AdMobServingRepository: AdServingRepository {
         // 広告インスタンスは 1 回のみ表示可能・約 1 時間で失効するため、表示後に 1 枚だけ再ロードする。
         // ViewTaskStore の ignoreNew で同一プレースメントの再ロード多重起動を構造的に防ぐ。
         taskStore.start(id: AdsKitActions.reloadAd(placement.id), lifetime: .appBound, policy: .ignoreNew) { _ in
-            try? await self.loadAd(placement: placement)
+            do {
+                try await self.loadAd(placement: placement)
+            } catch {
+                let message = "failed to reload ad for \(placement.id.rawValue): \(error)"
+                AdsKitLog.logger.error("\(message, privacy: .public)")
+            }
         }
     }
 
@@ -228,9 +245,12 @@ private final class FullScreenAdEvents: NSObject, FullScreenContentDelegate {
     /// GADFullScreenContentDelegate のメソッド名 (SDK 契約)
     nonisolated func ad(
         _: FullScreenPresentingAd,
-        didFailToPresentFullScreenContentWithError _: Error,
+        didFailToPresentFullScreenContentWithError error: Error,
     ) {
         Task { @MainActor in
+            AdsKitLog.logger.error(
+                "failed to present full screen ad: \(String(describing: error), privacy: .public)",
+            )
             self.finish(with: .unavailable)
         }
     }

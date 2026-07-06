@@ -13,16 +13,25 @@ final class ConsentCoordinator {
     private(set) var canRequestAds = false
 
     func prepareConsent() async {
-        do {
-            try await ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters())
-            if let viewController = Self.topViewController() {
-                try await ConsentForm.loadAndPresentIfRequired(from: viewController)
+        #if DEBUG || targetEnvironment(simulator)
+            // UMP/ATT のスキップは確実に開発環境と分かるビルドに限定する。
+            // Release 実機では AdUnitIDResolver が fail-safe で .test に倒れても通常の同意フローを通す。
+            canRequestAds = true
+        #else
+            do {
+                try await ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters())
+                if let viewController = Self.topViewController() {
+                    try await ConsentForm.loadAndPresentIfRequired(from: viewController)
+                }
+            } catch {
+                // 同意フローの失敗でゲームを止めない。canRequestAds に従って安全に劣化する。
+                AdsKitLog.logger.error(
+                    "failed to prepare consent flow: \(String(describing: error), privacy: .public)",
+                )
             }
-        } catch {
-            // 同意フローの失敗でゲームを止めない。canRequestAds に従って安全に劣化する。
-        }
-        _ = await ATTrackingManager.requestTrackingAuthorization()
-        canRequestAds = ConsentInformation.shared.canRequestAds
+            _ = await ATTrackingManager.requestTrackingAuthorization()
+            canRequestAds = ConsentInformation.shared.canRequestAds
+        #endif
     }
 
     var privacyOptionsRequired: Bool {
@@ -33,7 +42,14 @@ final class ConsentCoordinator {
         guard let viewController = Self.topViewController() else {
             return
         }
-        try? await ConsentForm.presentPrivacyOptionsForm(from: viewController)
+        do {
+            try await ConsentForm.presentPrivacyOptionsForm(from: viewController)
+        } catch {
+            // プライバシー設定フォームはユーザー起点の任意導線。失敗してもゲーム進行は止めない。
+            AdsKitLog.logger.error(
+                "failed to present privacy options form: \(String(describing: error), privacy: .public)",
+            )
+        }
     }
 
     static func topViewController() -> UIViewController? {

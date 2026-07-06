@@ -20,9 +20,15 @@ struct AdUnitIDResolver {
             // TestFlight と App Store 提出は同一の Release アーカイブを共有するため、
             // ビルド設定ではなく実行時に判定する。判定不能時は test に倒す
             // (fail-safe: 収益を捨てても無効トラフィックを出さない)。
-            guard case let .verified(transaction) = try? await AppTransaction.shared,
-                  transaction.environment == .production
-            else {
+            do {
+                guard case let .verified(transaction) = try await AppTransaction.shared,
+                      transaction.environment == .production
+                else {
+                    return .test
+                }
+            } catch {
+                let message = "failed to resolve App Store transaction environment; using test ad units: \(error)"
+                AdsKitLog.logger.error("\(message, privacy: .public)")
                 return .test
             }
             return .production
