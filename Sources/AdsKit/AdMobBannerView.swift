@@ -91,6 +91,7 @@ private struct AdMobBannerView: UIViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, BannerViewDelegate {
         private static let resetLoadStateAction: ActionID = "adsKit.banner.resetLoadState"
+        private static let loadBannerAction: ActionID = "adsKit.banner.load"
         var banner: BannerView?
         private var isLoaded: Binding<Bool>
         private var loadedAdSize: Binding<CGSize?>
@@ -113,14 +114,19 @@ private struct AdMobBannerView: UIViewRepresentable {
                 self.isLoaded.wrappedValue = false
                 self.loadedAdSize.wrappedValue = nil
             }
-            // 予約高さ (DesignAdMetrics.bannerReservedHeight) を超えないよう
-            // maxHeight 付きのインラインアダプティブサイズを使う (レイアウトシフト防止)。
-            banner.adSize = inlineAdaptiveBanner(
-                width: width,
-                maxHeight: DesignAdMetrics.bannerReservedHeight,
-            )
-            banner.rootViewController = ConsentCoordinator.topViewController()
-            banner.load(Request())
+            // view update 中の同期 load はメインスレッドを塞ぐため、次のメインアクタターンへ遅延する。
+            let requestWidth = width
+            taskStore.start(id: Self.loadBannerAction, lifetime: .screenBound, policy: .cancelExisting) { _ in
+                guard let banner = self.banner else {
+                    return
+                }
+                banner.adSize = inlineAdaptiveBanner(
+                    width: requestWidth,
+                    maxHeight: DesignAdMetrics.bannerReservedHeight,
+                )
+                banner.rootViewController = ConsentCoordinator.topViewController()
+                banner.load(Request())
+            }
         }
 
         nonisolated func bannerViewDidReceiveAd(_: BannerView) {
