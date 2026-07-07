@@ -152,6 +152,8 @@ public final class AdMobServingRepository: AdServingRepository {
         let outcome = await events.run {
             loadedInterstitial.present(from: viewController)
         }
+        // 表示完了後はデリゲート参照を切り、広告インスタンスの解放を妨げない。
+        loadedInterstitial.fullScreenContentDelegate = nil
         reload(placement)
         return outcome
     }
@@ -167,14 +169,19 @@ public final class AdMobServingRepository: AdServingRepository {
         rewardedAds[placement.id] = nil
         let events = FullScreenAdEvents()
         loadedRewarded.fullScreenContentDelegate = events
+        // 報酬付与クロージャが広告インスタンスを強参照し続けないよう、必要な値を事前にローカルへ取り出す。
+        let placementID = placement.id
+        let rewardAmount = loadedRewarded.adReward.amount.intValue
         let outcome = await events.run {
             loadedRewarded.present(from: viewController) {
                 events.recordReward(Application.AdReward(
-                    placementID: placement.id,
-                    amount: loadedRewarded.adReward.amount.intValue,
+                    placementID: placementID,
+                    amount: rewardAmount,
                 ))
             }
         }
+        // 表示完了後はデリゲート参照を切り、広告インスタンスの解放を妨げない。
+        loadedRewarded.fullScreenContentDelegate = nil
         reload(placement)
         // リワードは「報酬条件を満たしたか」だけで判定する。
         // 報酬前の離脱はインプレッションが記録されていても .dismissed (付与しない)。
