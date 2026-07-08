@@ -10,7 +10,8 @@ struct AdUnitIDResolver {
     let environment: AdsEnvironment
 
     static func resolve() async -> AdUnitIDResolver {
-        await AdUnitIDResolver(environment: resolveEnvironment())
+        let environment = await resolveEnvironment()
+        return AdUnitIDResolver(environment: environment)
     }
 
     private static func resolveEnvironment() async -> AdsEnvironment {
@@ -25,19 +26,54 @@ struct AdUnitIDResolver {
             // (.xcode)・判定不能時は test に倒す (fail-safe: 無効トラフィックを出さない)。
             // 注意: TestFlight では本物の広告が出るため、自分の広告をタップしない。
             // タップ検証が必要な端末は AdMob コンソールでテストデバイス登録する。
-            do {
-                guard case let .verified(transaction) = try await AppTransaction.shared,
-                      transaction.environment == .production || transaction.environment == .sandbox
-                else {
-                    return .test
+            for attempt in 1 ... 3 {
+                do {
+                    let result = try await AppTransaction.shared
+                    if let storeEnvironment = appStoreEnvironment(from: result) {
+                        let environment = AppStoreAdServingPolicy.adsEnvironment(for: storeEnvironment)
+                        logResolvedEnvironment(environment, signal: "appTransaction(\(storeEnvironment))")
+                        return environment
+                    }
+                } catch {
+                    AdsKitLog.logger.error(
+                        "AppTransaction attempt \(attempt) failed; will retry or fall back: \(String(describing: error), privacy: .public)",
+                    )
+                    if attempt < 3 {
+                        try? await Task.sleep(for: .milliseconds(300 * attempt))
+                    }
                 }
-            } catch {
-                let message = "failed to resolve App Store transaction environment; using test ad units: \(error)"
-                AdsKitLog.logger.error("\(message, privacy: .public)")
-                return .test
             }
-            return .production
+
+            let receiptComponent = Bundle.main.appStoreReceiptURL?.lastPathComponent
+            if let environment = AppStoreAdServingPolicy.adsEnvironment(receiptLastPathComponent: receiptComponent) {
+                logResolvedEnvironment(environment, signal: "receiptURL(\(receiptComponent ?? "nil"))")
+                return environment
+            }
+
+            AdsKitLog.logger.error("failed to resolve App Store distribution; using test ad units (fail-safe)")
+            return .test
         #endif
+    }
+
+    private static func appStoreEnvironment(from result: VerificationResult<AppTransaction>) -> AppStore.Environment? {
+        let transaction: AppTransaction
+        switch result {
+        case let .verified(value):
+            transaction = value
+        case let .unverified(value, error):
+            // ユニット ID 選択は信頼境界ではない。検証失敗でも環境フィールドは利用する。
+            AdsKitLog.logger.error(
+                "unverified AppTransaction; using environment anyway: \(String(describing: error), privacy: .public)",
+            )
+            transaction = value
+        }
+        return transaction.environment
+    }
+
+    private static func logResolvedEnvironment(_ environment: AdsEnvironment, signal: String) {
+        AdsKitLog.logger.info(
+            "resolved ad environment=\(String(describing: environment), privacy: .public) via \(signal, privacy: .public)",
+        )
     }
 
     func adUnitID(for placement: AdPlacementID) -> String {

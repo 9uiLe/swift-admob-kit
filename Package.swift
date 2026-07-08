@@ -34,6 +34,10 @@ let package = Package(
                 .product(name: "Tasking", package: "swift-tasking"),
             ],
         ),
+        .testTarget(
+            name: "AdsKitTests",
+            dependencies: ["AdsKit"],
+        ),
     ],
     swiftLanguageModes: [.v6],
 )
