@@ -1,6 +1,15 @@
 {
-  "originHash" : "e26815bb51fd78af3750693ad2c23251a831699b30ff83faed49ffc50091c8df",
+  "originHash" : "ee39f22b65c52f46f9671796e1b8001102e074bb7ba45859af7387323a492f06",
   "pins" : [
+    {
+      "identity" : "swift-app-macros",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/9uiLe/swift-app-macros.git",
+      "state" : {
+        "revision" : "cc77a6d99544f1ca8ba00c8b289614eb8363f67e",
+        "version" : "0.1.0"
+      }
+    },
     {
       "identity" : "swift-package-manager-google-mobile-ads",
       "kind" : "remoteSourceControl",
@@ -26,6 +35,15 @@
       "state" : {
         "revision" : "1e0e79023b173209453e9759381c9aff4932dff4",
         "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax.git",
+      "state" : {
+        "revision" : "79e4b74a295b6eb74a8b585e3a39d29e70c1dbd1",
+        "version" : "603.0.2"
       }
     },
     {

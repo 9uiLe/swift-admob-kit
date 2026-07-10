@@ -1,3 +1,4 @@
+import AppMacros
 import DesignSystem
 import Domain
 
@@ -10,14 +11,19 @@ import UIKit
 /// バナースロット (Presentation) に注入される実バナー。
 /// ロード前はプレースホルダを表示し、ロード完了時にフレーム内でクロスフェードする
 /// (スロット側が高さを予約しているためレイアウトは一切動かない)。
-struct GameplayBannerContainer: View {
+/// `repository` は composition root で一度だけ注入される安定参照 (`final class`) のため
+/// `@SkipEquatable` で比較対象外にする (不変条件: 実行中に差し替えない)。`@State` はマクロが
+/// 自動除外するので比較対象は `placement` のみ。これで親由来の再評価を diff narrowing で抑えつつ、
+/// `@State` 駆動の更新 (バナーのロード完了クロスフェード) は従来どおり保持する。
+@Equatable
+struct GameplayBannerContainer: EquatableBodyView {
     let placement: AdPlacementID
-    let repository: AdMobServingRepository
+    @SkipEquatable let repository: AdMobServingRepository
     @State private var adUnitID: String?
     @State private var isLoaded = false
     @State private var loadedAdSize: CGSize?
 
-    var body: some View {
+    var equatableBody: some View {
         ZStack {
             RoundedRectangle(cornerRadius: DesignRadius.medium.rawValue, style: .continuous)
                 .fill(DesignColor.surface)
