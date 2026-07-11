@@ -37,7 +37,7 @@ struct AdUnitIDResolver {
                         return environment
                     }
                 } catch {
-                    AdsKitLog.logger.error(
+                    AdMobKitLog.logger.error(
                         "AppTransaction attempt \(attempt) failed; will retry or fall back: \(String(describing: error), privacy: .public)",
                     )
                     if attempt < 3 {
@@ -52,7 +52,7 @@ struct AdUnitIDResolver {
                 return environment
             }
 
-            AdsKitLog.logger.error("failed to resolve App Store distribution; using test ad units (fail-safe)")
+            AdMobKitLog.logger.error("failed to resolve App Store distribution; using test ad units (fail-safe)")
             return .test
         #endif
     }
@@ -64,7 +64,7 @@ struct AdUnitIDResolver {
             transaction = value
         case let .unverified(value, error):
             // ユニット ID 選択は信頼境界ではない。検証失敗でも環境フィールドは利用する。
-            AdsKitLog.logger.error(
+            AdMobKitLog.logger.error(
                 "unverified AppTransaction; using environment anyway: \(String(describing: error), privacy: .public)",
             )
             transaction = value
@@ -73,7 +73,7 @@ struct AdUnitIDResolver {
     }
 
     private static func logResolvedEnvironment(_ environment: AdsEnvironment, signal: String) {
-        AdsKitLog.logger.info(
+        AdMobKitLog.logger.info(
             "resolved ad environment=\(String(describing: environment), privacy: .public) via \(signal, privacy: .public)",
         )
     }

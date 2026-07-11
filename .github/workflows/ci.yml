@@ -8,13 +8,20 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: macos-26
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - name: Resolve package
+        run: swift package resolve
       - name: Test
         run: >-
           xcodebuild test
-          -scheme SwiftAdsKit
+          -scheme SwiftAdMobKit
           -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'

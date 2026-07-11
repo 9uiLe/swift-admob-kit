@@ -122,7 +122,7 @@ private struct AdMobBannerRepresentable: UIViewRepresentable {
 
         nonisolated func bannerView(_: BannerView, didFailToReceiveAdWithError error: Error) {
             Task { @MainActor in
-                AdsKitLog.logger.error(
+                AdMobKitLog.logger.error(
                     "failed to load banner ad: \(String(describing: error), privacy: .public)",
                 )
                 self.loadedAdSize.wrappedValue = nil

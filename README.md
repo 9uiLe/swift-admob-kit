@@ -1,6 +1,9 @@
-# Swift Ads Kit
+# Swift AdMob Kit
 
-`AdsKit` is a small Swift package that isolates Google Mobile Ads and User Messaging Platform behind a Swift 6, MainActor-safe interface.
+[![CI](https://github.com/9uiLe/swift-admob-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/9uiLe/swift-admob-kit/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+`AdMobKit` is a small Swift package that isolates Google Mobile Ads and User Messaging Platform behind a Swift 6, MainActor-safe interface.
 
 The package owns SDK startup, UMP consent, optional ATT authorization, test-versus-production unit selection, banner rendering, full-screen ad caching, presentation outcomes, and reloads. Your app owns placement names, production ad unit IDs, monetization policy, and UI styling.
 
@@ -16,12 +19,12 @@ Add the package dependency in Xcode or in `Package.swift`:
 
 ```swift
 .package(
-    url: "https://github.com/9uiLe/swift-ads-kit.git",
+    url: "https://github.com/9uiLe/swift-admob-kit.git",
     from: "0.1.0",
 )
 ```
 
-Then add the `AdsKit` product to your iOS target.
+Then add the `AdMobKit` product to your iOS target.
 
 ## Host app setup
 
@@ -40,10 +43,10 @@ Create required privacy messages in the AdMob console before shipping. See Googl
 
 ## Configure the client
 
-Slots are host-defined string keys. Production unit IDs are injected by the host; Google demo IDs remain internal to AdsKit.
+Slots are host-defined string keys. Production unit IDs are injected by the host; Google demo IDs remain internal to AdMobKit.
 
 ```swift
-import AdsKit
+import AdMobKit
 
 let banner = AdSlot(rawValue: "home-banner")
 let interstitial = AdSlot(rawValue: "level-complete")
@@ -114,12 +117,14 @@ With `.automatic`:
 - App Store and TestFlight distributions use the host's production IDs.
 - unresolved distribution state fails safe to demo IDs.
 
-Use `.test` to force demo IDs. AdsKit intentionally has no “force production” policy. Always follow Google's [test ads guidance](https://developers.google.com/admob/ios/test-ads); do not click live ads while testing.
+Use `.test` to force demo IDs. AdMobKit intentionally has no “force production” policy. Always follow Google's [test ads guidance](https://developers.google.com/admob/ios/test-ads); do not click live ads while testing.
 
 ## Architecture
 
-`AdMobClient` is the public module interface. It is isolated to `MainActor`, keeping non-Sendable Google SDK objects inside the implementation. Apps adapt their own domain placement types and advertising policy to `AdSlot`; AdsKit does not define frequency caps, rewards policy, or app-specific presentation contracts.
+`AdMobClient` is the public module interface. It is isolated to `MainActor`, keeping non-Sendable Google SDK objects inside the implementation. Apps adapt their own domain placement types and advertising policy to `AdSlot`; AdMobKit does not define frequency caps, rewards policy, or app-specific presentation contracts.
 
 ## License
 
-Swift Ads Kit is available under the MIT License. See [LICENSE](LICENSE).
+Swift AdMob Kit is available under the MIT License. See [LICENSE](LICENSE).
+
+This is an independent, unofficial project. AdMob and Google Mobile Ads are trademarks of Google LLC.

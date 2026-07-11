@@ -1,0 +1,42 @@
+name: Bug report
+description: Report reproducible AdMobKit behavior that does not match its documented contract.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include production AdMob IDs, device identifiers, or private account information.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AdMobKit version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Xcode, iOS, device or Simulator, DEBUG or Release
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest safe example that reproduces the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      render: shell

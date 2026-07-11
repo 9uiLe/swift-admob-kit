@@ -1,7 +1,7 @@
 import AppTrackingTransparency
 
 // concurrency-exception: Google Mobile Ads SDK は Swift 6 strict concurrency に完全対応していないため、
-// @preconcurrency import を AdsKit 内部に限定して使用する (設計書 §2 T2)。
+// @preconcurrency import を AdMobKit 内部に限定して使用する。
 @preconcurrency import GoogleMobileAds
 import UIKit
 @preconcurrency import UserMessagingPlatform
@@ -25,7 +25,7 @@ final class ConsentCoordinator {
                 }
             } catch {
                 // 同意フローの失敗でゲームを止めない。canRequestAds に従って安全に劣化する。
-                AdsKitLog.logger.error(
+                AdMobKitLog.logger.error(
                     "failed to prepare consent flow: \(String(describing: error), privacy: .public)",
                 )
             }
@@ -48,7 +48,7 @@ final class ConsentCoordinator {
             try await ConsentForm.presentPrivacyOptionsForm(from: viewController)
         } catch {
             // プライバシー設定フォームはユーザー起点の任意導線。失敗してもゲーム進行は止めない。
-            AdsKitLog.logger.error(
+            AdMobKitLog.logger.error(
                 "failed to present privacy options form: \(String(describing: error), privacy: .public)",
             )
         }

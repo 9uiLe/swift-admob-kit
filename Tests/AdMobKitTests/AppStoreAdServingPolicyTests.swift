@@ -1,4 +1,4 @@
-@testable import AdsKit
+@testable import AdMobKit
 import StoreKit
 import XCTest
 

@@ -1,6 +1,6 @@
 import Foundation
 
-/// A host-defined key for one ad location. AdsKit does not attach domain meaning to it.
+/// A host-defined key for one ad location. AdMobKit does not attach domain meaning to it.
 public struct AdSlot: RawRepresentable, Codable, Equatable, Hashable, Sendable {
     public let rawValue: String
 
@@ -17,7 +17,7 @@ public enum AdMobFormat: String, Codable, Equatable, Sendable {
 }
 
 /// The production unit ID and format for a host-defined slot.
-/// Google demo IDs are selected internally whenever AdsKit resolves the test environment.
+/// Google demo IDs are selected internally whenever AdMobKit resolves the test environment.
 public struct AdUnitConfiguration: Codable, Equatable, Sendable {
     public let format: AdMobFormat
     public let productionAdUnitID: String
@@ -30,7 +30,7 @@ public struct AdUnitConfiguration: Codable, Equatable, Sendable {
 
 public enum AdEnvironmentPolicy: Codable, Equatable, Sendable {
     /// DEBUG, Simulator, and direct Xcode installs use test ads. Distributed builds use production ads.
-    /// If distribution cannot be established, AdsKit fails safe to test ads.
+    /// If distribution cannot be established, AdMobKit fails safe to test ads.
     case automatic
     /// Always use Google's demo ad unit IDs. Useful for previews, QA, and automated tests.
     case test

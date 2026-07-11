@@ -1,0 +1,27 @@
+name: Feature request
+description: Propose a focused improvement to the AdMob integration module.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What host-app problem should AdMobKit solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed interface
+      description: Describe the smallest public interface that would solve it.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This request is specific to Google Mobile Ads or UMP, not a multi-network abstraction.
+          required: true

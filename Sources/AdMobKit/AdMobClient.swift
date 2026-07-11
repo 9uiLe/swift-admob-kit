@@ -6,7 +6,7 @@ import UIKit
 
 /// A MainActor-isolated facade over Google Mobile Ads and UMP.
 ///
-/// The host supplies slot names and production unit IDs. AdsKit owns consent, environment resolution,
+/// The host supplies slot names and production unit IDs. AdMobKit owns consent, environment resolution,
 /// Google demo ID selection, ad caching, presentation, and post-presentation reloads.
 @MainActor
 public final class AdMobClient {
@@ -270,7 +270,7 @@ public final class AdMobClient {
     }
 
     private func logLoadFailure(_ error: Error, slot: AdSlot) {
-        AdsKitLog.logger.error(
+        AdMobKitLog.logger.error(
             "failed to load ad for slot=\(slot.rawValue, privacy: .public): \(String(describing: error), privacy: .public)",
         )
     }
@@ -319,7 +319,7 @@ private final class FullScreenAdEvents: NSObject, FullScreenContentDelegate {
         didFailToPresentFullScreenContentWithError error: Error,
     ) {
         Task { @MainActor in
-            AdsKitLog.logger.error(
+            AdMobKitLog.logger.error(
                 "failed to present full-screen ad: \(String(describing: error), privacy: .public)",
             )
             self.finish(with: .unavailable(.presentationFailed))

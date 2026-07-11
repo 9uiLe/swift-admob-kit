@@ -3,14 +3,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "SwiftAdsKit",
+    name: "SwiftAdMobKit",
     platforms: [
         .iOS(.v26),
     ],
     products: [
         .library(
-            name: "AdsKit",
-            targets: ["AdsKit"],
+            name: "AdMobKit",
+            targets: ["AdMobKit"],
         ),
     ],
     dependencies: [
@@ -21,14 +21,14 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "AdsKit",
+            name: "AdMobKit",
             dependencies: [
                 .product(name: "GoogleMobileAds", package: "swift-package-manager-google-mobile-ads"),
             ],
         ),
         .testTarget(
-            name: "AdsKitTests",
-            dependencies: ["AdsKit"],
+            name: "AdMobKitTests",
+            dependencies: ["AdMobKit"],
         ),
     ],
     swiftLanguageModes: [.v6],

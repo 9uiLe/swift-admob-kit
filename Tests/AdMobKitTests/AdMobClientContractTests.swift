@@ -1,4 +1,4 @@
-import AdsKit
+import AdMobKit
 import XCTest
 
 @MainActor
