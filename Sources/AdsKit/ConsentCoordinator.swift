@@ -12,7 +12,7 @@ import UIKit
 final class ConsentCoordinator {
     private(set) var canRequestAds = false
 
-    func prepareConsent() async {
+    func prepareConsent(trackingAuthorizationPolicy: AdTrackingAuthorizationPolicy) async {
         #if DEBUG || targetEnvironment(simulator)
             // UMP/ATT のスキップは確実に開発環境と分かるビルドに限定する。
             // Release 実機では AdUnitIDResolver が fail-safe で .test に倒れても通常の同意フローを通す。
@@ -29,7 +29,9 @@ final class ConsentCoordinator {
                     "failed to prepare consent flow: \(String(describing: error), privacy: .public)",
                 )
             }
-            _ = await ATTrackingManager.requestTrackingAuthorization()
+            if trackingAuthorizationPolicy == .requestAfterConsent {
+                _ = await ATTrackingManager.requestTrackingAuthorization()
+            }
             canRequestAds = ConsentInformation.shared.canRequestAds
         #endif
     }

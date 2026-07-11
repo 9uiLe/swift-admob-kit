@@ -1,4 +1,3 @@
-import Domain
 import StoreKit
 
 enum AdsEnvironment {
@@ -9,12 +8,15 @@ enum AdsEnvironment {
 struct AdUnitIDResolver {
     let environment: AdsEnvironment
 
-    static func resolve() async -> AdUnitIDResolver {
-        let environment = await resolveEnvironment()
+    static func resolve(policy: AdEnvironmentPolicy) async -> AdUnitIDResolver {
+        guard policy == .automatic else {
+            return AdUnitIDResolver(environment: .test)
+        }
+        let environment = await resolveAutomaticEnvironment()
         return AdUnitIDResolver(environment: environment)
     }
 
-    private static func resolveEnvironment() async -> AdsEnvironment {
+    private static func resolveAutomaticEnvironment() async -> AdsEnvironment {
         #if DEBUG || targetEnvironment(simulator)
             // AdMob が自動でテストデバイス扱いにするのはシミュレータのみ。実機 Debug は
             // SDK からは本番と区別できないため、この分岐でテスト ID を強制する (削除禁止)。
@@ -76,38 +78,32 @@ struct AdUnitIDResolver {
         )
     }
 
-    func adUnitID(for placement: AdPlacementID) -> String {
+    func adUnitID(for configuration: AdUnitConfiguration) -> String? {
         switch environment {
         case .test:
-            testAdUnitID(for: placement)
+            testAdUnitID(for: configuration.format)
         case .production:
-            productionAdUnitID(for: placement)
+            isValidProductionAdUnitID(configuration.productionAdUnitID)
+                ? configuration.productionAdUnitID
+                : nil
         }
+    }
+
+    private func isValidProductionAdUnitID(_ value: String) -> Bool {
+        value.hasPrefix("ca-app-pub-") && value.contains("/")
     }
 
     /// Google 公式のデモ用 AdUnitID (https://developers.google.com/admob/ios/test-ads)
-    private func testAdUnitID(for placement: AdPlacementID) -> String {
-        switch placement {
-        case .gameplayBanner:
+    private func testAdUnitID(for format: AdMobFormat) -> String {
+        switch format {
+        case .banner:
             "ca-app-pub-3940256099942544/2435281174"
-        case .postPuzzleInterstitial:
+        case .interstitial:
             "ca-app-pub-3940256099942544/4411468910"
-        case .rewardedHint, .rewardedPractice:
+        case .rewarded:
             "ca-app-pub-3940256099942544/1712485313"
-        }
-    }
-
-    /// 本番 AdUnitID はこのメソッド以外に書かない (scripts/check-architecture.sh が検査)。
-    private func productionAdUnitID(for placement: AdPlacementID) -> String {
-        switch placement {
-        case .gameplayBanner:
-            "ca-app-pub-2739163670639776/5942529722"
-        case .postPuzzleInterstitial:
-            "ca-app-pub-2739163670639776/3316366380"
-        case .rewardedHint:
-            "ca-app-pub-2739163670639776/2003284711"
-        case .rewardedPractice:
-            "ca-app-pub-2739163670639776/9227168618"
+        case .rewardedInterstitial:
+            "ca-app-pub-3940256099942544/6978759866"
         }
     }
 }
